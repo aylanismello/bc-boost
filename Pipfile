@@ -7,12 +7,23 @@ verify_ssl = true
 selenium = "*"
 boto3 = "*"
 requests = "*"
+numpy = "*"
+pandas = "*"
+scipy = "*"
+plotly = "*"
+jupyter = "*"
 
 
 
 
 [dev-packages]
 ipython = "*"
+
+
+
+
+
+
 
 
 
