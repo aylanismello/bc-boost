@@ -16,7 +16,12 @@ class StatScraper(object):
         self.write_to_s3()
 
     def write_to_s3(self):
-        s3 = boto3.resource('s3')
+        s3 = boto3.client(
+            's3',
+            aws_access_key_id=os.environ('aws_access_key_id'),
+            aws_secret_access_key=os.environ('aws_secret_access_key')
+        )
+        # boto3.resource('s3')
         for service in ['soundcloud', 'twitter', 'instagram', 'facebook']:
             with open(f'{os.getcwd()}/server/data/{service}.csv', 'rb') as data:
                 s3.Bucket('burn-cartel-content').put_object(Key=f'{service}.csv', Body=data)
