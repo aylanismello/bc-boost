@@ -9,7 +9,8 @@ class StatScraper(object):
     def __init__(self):
         self.driver = webdriver.PhantomJS()
         # self.soundcloud()
-        self.instagram()
+        # self.instagram()
+        self.twitter()
 
     def write_to_csv(self, service, service_stats):
         with open(f"{os.getcwd()}/server/data/{service}.csv", 'a+') as csv_file:
@@ -27,7 +28,7 @@ class StatScraper(object):
                     service_stats['today_plays'],
                     service_stats['track_count']
                 ]
-            elif service == 'instagram':
+            elif service == 'instagram' or service == 'twitter':
                 new_row = [
                     time.strftime(f"{service}_%m/%d/%Y-%H:%M"),
                     service_stats['followers_count'],
@@ -41,30 +42,34 @@ class StatScraper(object):
         result = re.search('\d+', result).group(0)
         return result
 
+    def twitter(self):
+        stats = {}
+        self.driver.get('https://twitter.com/burncartel')
+        stats['post_count'] = self.driver.find_element_by_xpath('//*[@id="page-container"]/div[1]/div/div[2]/div/div/div[2]/div/div/ul/li[1]/a/span[3]')
+        stats['followers_count'] = self.driver.find_element_by_xpath('//*[@id="page-container"]/div[1]/div/div[2]/div/div/div[2]/div/div/ul/li[3]/a/span[3]')
+        stats['followings_count'] = self.driver.find_element_by_xpath('//*[@id="page-container"]/div[1]/div/div[2]/div/div/div[2]/div/div/ul/li[2]/a/span[3]')
+
+        for k, v in stats.items():
+            stats[k] = v.text.replace(',', '')
+        self.write_to_csv('twitter', stats)
+
+
     def instagram(self):
+        print('scraping instagram stats')
         stats = {}
         self.driver.get('https://instagram.com/burncartel')
         html = self.driver.find_element_by_xpath('//body').text
-        # followers_count = self.get_value_from_key('followers_count', response.text)
-        # result = re.search(f'{re.escape(key)}":\d+', html).group(0)
-        # result = re.search('\d+', result).group(0)
-
-        # embed()
-        # embed()
         stats['post_count'] = self.get_value_from_key('posts', html)
         stats['followers_count'] = self.get_value_from_key('followers', html)
         stats['followings_count'] = self.get_value_from_key('following', html)
-        # stats['followers_count'] = self.driver.find_element_by_xpath('//*[@id="react-root"]/section/main/article/header/div[2]/ul/li[2]/a/span')
-        # stats['followings_count'] = self.driver.find_element_by_xpath('//*[@id="react-root"]/section/main/article/header/div[2]/ul/li[3]/a/span')
-        # stats['post_count'] = self.driver.find_element_by_xpath('//*[@id="react-root"]/section/main/article/header/div[2]/ul/li[1]/span/span')
-        # stats['followers_count'] = self.driver.find_element_by_xpath('//*[@id="react-root"]/section/main/article/header/div[2]/ul/li[2]/a/span')
-        # stats['followings_count'] = self.driver.find_element_by_xpath('//*[@id="react-root"]/section/main/article/header/div[2]/ul/li[3]/a/span')
+
         for k, v in stats.items():
             stats[k] = v.replace(',', '')
 
         self.write_to_csv('instagram', stats)
 
     def soundcloud(self):
+        print('scraping soundcloud stats')
         stats = {}
         self.driver.get('https://soundcloud.com')
         login_button = self.driver.find_element_by_xpath('/html/body/div[1]/div[2]/div/div/div[1]/div/div/div[3]/button[1]')
