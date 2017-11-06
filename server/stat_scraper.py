@@ -1,5 +1,6 @@
 from selenium import webdriver
 from IPython import embed
+import boto3
 import time
 import csv
 import re
@@ -8,9 +9,17 @@ import os
 class StatScraper(object):
     def __init__(self):
         self.driver = webdriver.PhantomJS()
-        # self.soundcloud()
-        # self.instagram()
+        self.soundcloud()
+        self.instagram()
+        self.facebook()
         self.twitter()
+        self.write_to_s3()
+
+    def write_to_s3(self):
+        s3 = boto3.resource('s3')
+        for service in ['soundcloud', 'twitter', 'instagram', 'facebook']:
+            with open(f'{os.getcwd()}/server/data/{service}.csv', 'rb') as data:
+                s3.Bucket('burn-cartel-content').put_object(Key=f'{service}.csv', Body=data)
 
     def write_to_csv(self, service, service_stats):
         with open(f"{os.getcwd()}/server/data/{service}.csv", 'a+') as csv_file:
@@ -35,14 +44,35 @@ class StatScraper(object):
                     service_stats['followings_count'],
                     service_stats['post_count']
                 ]
+            elif service == 'facebook':
+                new_row = [
+                    time.strftime(f"{service}_%m/%d/%Y-%H:%M"),
+                    service_stats['followers_count'],
+                    service_stats['likes_count']
+                ]
             writer.writerow(new_row)
 
-    def get_value_from_key(self, key, html):
+    def get_insta_val(self, key, html):
         result = re.search(f'\d+\n{re.escape(key)}', html).group(0)
         result = re.search('\d+', result).group(0)
         return result
 
+    def get_fb_val(self, key, html):
+        result = re.search(f'\d+ people {re.escape(key)} this', html).group(0)
+        result = re.search('\d+', result).group(0)
+        return result
+
+    def facebook(self):
+        print('scraping facebook stats')
+        stats = {}
+        self.driver.get('https://facebook.com/burncartel')
+        html = self.driver.find_element_by_xpath('//body').text
+        stats['likes_count'] = self.get_fb_val('like', html)
+        stats['followers_count'] = self.get_fb_val('follow', html)
+        self.write_to_csv('facebook', stats)
+
     def twitter(self):
+        print('scraping twitter stats')
         stats = {}
         self.driver.get('https://twitter.com/burncartel')
         stats['post_count'] = self.driver.find_element_by_xpath('//*[@id="page-container"]/div[1]/div/div[2]/div/div/div[2]/div/div/ul/li[1]/a/span[3]')
@@ -59,9 +89,9 @@ class StatScraper(object):
         stats = {}
         self.driver.get('https://instagram.com/burncartel')
         html = self.driver.find_element_by_xpath('//body').text
-        stats['post_count'] = self.get_value_from_key('posts', html)
-        stats['followers_count'] = self.get_value_from_key('followers', html)
-        stats['followings_count'] = self.get_value_from_key('following', html)
+        stats['post_count'] = self.get_insta_val('posts', html)
+        stats['followers_count'] = self.get_insta_val('followers', html)
+        stats['followings_count'] = self.get_insta_val('following', html)
 
         for k, v in stats.items():
             stats[k] = v.replace(',', '')
