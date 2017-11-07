@@ -24,7 +24,8 @@ class StatScraper(object):
         # boto3.resource('s3')
         for service in ['soundcloud', 'twitter', 'instagram', 'facebook']:
             with open(f'{os.getcwd()}/server/data/{service}.csv', 'rb') as data:
-                s3.Bucket('burn-cartel-content').put_object(Key=f'{service}.csv', Body=data)
+                # s3.Bucket('burn-cartel-content').put_object(Key=f'{service}.csv', Body=data)
+                s3.upload_fileobj(data, 'burn-cartel-content', f'{service}.csv')
 
     def write_to_csv(self, service, service_stats):
         with open(f"{os.getcwd()}/server/data/{service}.csv", 'a+') as csv_file:
