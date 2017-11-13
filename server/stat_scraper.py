@@ -12,8 +12,13 @@ class StatScraper(object):
     def __init__(self, handle):
         self.handle = handle
         self.max_sleep = int(os.environ['MAX_SLEEP_TIME'] or 3)
-        # self.driver = webdriver.Chrome()
-        self.driver = webdriver.PhantomJS()
+
+        options = webdriver.ChromeOptions()
+        options.add_argument('headless')
+        options.add_argument('window-size=1200x600')
+        embed()
+        self.driver = webdriver.Chrome(chrome_options=options)
+        # self.driver = webdriver.PhantomJS()
         self.soundcloud()
         self.instagram()
         self.facebook()
@@ -97,7 +102,12 @@ class StatScraper(object):
     def twitter(self):
         print('scraping twitter stats')
         stats = {}
-        self.driver.get(f'https://twitter.com/{self.handle}')
+
+        twitter_handle = self.handle
+        if twitter_handle == 'hoodedyouth':
+            twitter_handle = 'hooded_youth'
+
+        self.driver.get(f'https://twitter.com/{twitter_handle}')
         time.sleep(self.max_sleep)
 
         stats['post_count'] = self.driver.find_element_by_xpath('//*[@id="page-container"]/div[1]/div/div[2]/div/div/div[2]/div/div/ul/li[1]/a/span[3]')
@@ -155,7 +165,9 @@ class StatScraper(object):
 
         time.sleep(1)
         self.driver.get(f'https://soundcloud.com/{self.handle}')
+
         time.sleep(self.max_sleep)
+
         try:
             stats['followers_count'] = self.driver.find_element_by_xpath('//*[@id="content"]/div/div[5]/div[2]/div/article[1]/table/tbody/tr/td[1]/a/div')
             stats['followings_count'] = self.driver.find_element_by_xpath('//*[@id="content"]/div/div[5]/div[2]/div/article[1]/table/tbody/tr/td[2]/a/div')
