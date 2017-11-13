@@ -1,3 +1,4 @@
 from stat_scraper import StatScraper
 
-StatScraper()
+for handle in ['burncartel', 'hoodedyouth']:
+    StatScraper(handle)
